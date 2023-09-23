@@ -9,8 +9,9 @@ const selectProviders = catchAsync(async (req, res) => {
     error.statusCode = 400;
     throw error;
   }
+
   const providersInfo = await providerServices.getProvidersInfo(user.id);
-  res.status(201).json(providersInfo, {message: "SUCCESS CREATED"});
+  res.status(201).json(providersInfo);
 });
 
 const getUserFinances = catchAsync(async (req, res) => {

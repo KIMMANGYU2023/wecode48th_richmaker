@@ -46,7 +46,7 @@ const getCIByPhoneNumber = catchAsync(async (req, res) => {
   const { phoneNumber } = req.body;
     const options = {
       method: 'POST',
-      uri: 'http://10.58.52.167:3001/auth',
+      uri: 'http://10.58.52.186:3001/auth',
       body: {
         phoneNumber: phoneNumber
       },
@@ -56,7 +56,7 @@ const getCIByPhoneNumber = catchAsync(async (req, res) => {
     const responseBody = await request(options);
 
     if (responseBody) {
-      return res.status(200).json({ message: "Successful authentication", CI: responseBody.CI});
+      return res.status(203).json({ message: "Successful authentication", CI: responseBody.CI});
     } else {
       const error = new Error("not Personal authentication");
       error.status = 400;

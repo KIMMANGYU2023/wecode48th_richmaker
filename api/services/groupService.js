@@ -37,6 +37,7 @@ const sendInvitation = async (userId, receiverPhoneNumber) => {
 
 const getMemberList = async (userId) => {
   const groupId = await groupDao.getGroupById(userId);
+
   if (!groupId) {
     const error = new Error("User doesn't have a group");
     error.statusCode = 400;
