@@ -4,8 +4,7 @@ const userDao = require("../models/userDao");
 const { validateEmailAndPassword } = require("../utils/validate");
 
 const hashPassword = async (plaintextPassword) => {
-  const saltRounds = 10;
-
+  saltRounds = 10
   return await bcrypt.hash(plaintextPassword, saltRounds);
 };
 
@@ -36,12 +35,11 @@ const signUp = async (userName, phoneNumber,password, CI) => {
 };
 
 const signIn = async (phoneNumber, password) => {
-  const user = await userDao.getUserByPhoneNumber(phoneNumber, password);
+  const user = await userDao.getUserByPhoneNumber(phoneNumber);
 
   if (!user) {
     const error = new Error("INVALID_USER");
-    error.statusCode = 401;
-
+    error.statusCode = 404;
     throw error;
   }
 
@@ -50,32 +48,30 @@ const signIn = async (phoneNumber, password) => {
   if (!isMatched) {
     const error = new Error("INVALID_PASSWORD");
     error.statusCode = 204;
-
     throw error;
   }
+
   const accessToken = jwt.sign(
     { id: user.id, phoneNumber: user.phoneNumber, grouping_id: user.grouping_id, userName: user.userName},
     process.env.JWT_SECRET,
     {
       algorithm: process.env.ALGORITHM,
       expiresIn: process.env.JWT_EXPIRES_IN,
-    }
-    );
+    });
     return {
     id: user.id,
-    accessToken, 
     grouping_id: user.grouping_id,
     userName: user.user_name,
     profileImage: user.profile_image,
+    accessToken
   };
 };
 
-const changePassword = async(id, existingPassword, newPassword) => {
-  if (!id || !existingPassword) {
+const changePassword = async(userId, existingPassword, newPassword) => {
+  if (!userId || !existingPassword) {
     throw new Error('User not found');
   }
-  
-  const user = await userDao.findUserByUsername(id);
+  const user = await userDao.findUserByUsername(userId);
 
   const isMatch = await bcrypt.compare(existingPassword, user.password);
   if (!isMatch) {
@@ -83,16 +79,16 @@ const changePassword = async(id, existingPassword, newPassword) => {
   }
 
   const hashedPassword = await hashPassword(newPassword);
-  const passwordchange = await userDao.updatePassword(id, hashedPassword);
+  const passwordchange = await userDao.updatePassword(userId, hashedPassword);
   
   return passwordchange;
 };
 
-const updateProfileImageURL = async(id, uploadedFileURL) =>{
+const updateProfileImageURL = async(userId, uploadedFileURL) =>{
 
-  const getUserById = await userDao.getUserById(id);
+  const getUserById = await userDao.getUserById(userId);
 
-  const profileImage = await userDao.updateProfileImageURL(id, uploadedFileURL);
+  const profileImage = await userDao.updateProfileImageURL(userId, uploadedFileURL);
   return profileImage;
 }
 

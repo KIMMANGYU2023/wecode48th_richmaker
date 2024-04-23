@@ -45,7 +45,6 @@ const createUser = async (userName, phoneNumber, hashedPassword, CI) => {
   }
 };
 
-
 const getUserByPhoneNumber = async (phoneNumber) => {
   try {
     const [result] = await AppDataSource.query(
@@ -66,7 +65,6 @@ const getUserByPhoneNumber = async (phoneNumber) => {
   } catch {
     const error = new Error("dataSource phoeNumber Error");
     error.statusCode = 400;
-
     throw error;
   }
 };
@@ -85,9 +83,8 @@ const getUserById = async (id) => {
       `,
       [id]
     );
-
     return result;
-  } catch {
+  } catch{
     const error = new Error("dataSource id Error");
     error.statusCode = 400;
     throw error;
@@ -134,7 +131,7 @@ const updatePassword = async(userId, hashedPassword) =>{
   }
 }
 
-const updateProfileImageURL = async(id,uploadedFileURL) =>{
+const updateProfileImageURL = async(userId, uploadedFileURL) =>{
   try{
     const result = await AppDataSource.query(
       `
@@ -143,7 +140,7 @@ const updateProfileImageURL = async(id,uploadedFileURL) =>{
       profile_image = ?
       WHERE id= ?
       `,
-      [uploadedFileURL, id]
+      [uploadedFileURL, userId]
     );
     return result
   }catch{

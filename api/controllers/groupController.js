@@ -139,14 +139,13 @@ const withdrawFromGroup = catchAsync(async (req, res) => {
 
 const getcardFinanceDetail = catchAsync(async (req, res) => {
   const { financeId, yearValue, monthValue} = req.query;
-  console.log(req);
-  console.log(financeId, yearValue, monthValue)
-  if (!yearValue || !monthValue) {
-      return res.status(400).json({ message: "Year and month are required." });
+  if (!financeId || !yearValue || !monthValue) {
+    const error = new Error("KEY ERROR")
+    error.statusCode = 400;
+    throw error;
   }
-      const result = await groupService.getcardFinanceDetail(financeId, yearValue, monthValue);
-      return res.status(200).json(result);
-
+  const result = await groupService.getcardFinanceDetail(financeId, yearValue, monthValue);
+  res.status(200).json({result});
 });
 
 module.exports = {

@@ -11,7 +11,7 @@ const selectProviders = catchAsync(async (req, res) => {
   }
 
   const providersInfo = await providerServices.getProvidersInfo(user.id);
-  res.status(201).json(providersInfo);
+  res.status(201).json({providersInfo});
 });
 
 const getUserFinances = catchAsync(async (req, res) => {
@@ -31,7 +31,6 @@ const getUserFinances = catchAsync(async (req, res) => {
 });
 
 const postTransactions = async (req, res) => {
-  try {
     const data = req.body.data;
     const user = req.user;
     if (!user.id || !data) {
@@ -41,12 +40,6 @@ const postTransactions = async (req, res) => {
     }
 
     await providerServices.postTransactions(user.id, data);
-    res.status(200).json({ message: "SUCCESS CREATED" });
-  } catch (err) {
-    res.status(err.statusCode || 500).json({
-      message: err.message,
-    });
-  }
-};
+    res.status(200).json({ message: "SUCCESS CREATED" })};
 
 module.exports = { selectProviders, getUserFinances, postTransactions };

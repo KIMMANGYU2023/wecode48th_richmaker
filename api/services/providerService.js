@@ -33,7 +33,6 @@ const getUserFinances = async (userID, providerID) => {
   try {
     const CI = await getUserCI(userID);
     let ID;
-    console.log(CI)
     if (providerID.b && providerID.c) {
       const b = providerID.b.split(",");
       const c = providerID.c.split(",");
@@ -45,7 +44,6 @@ const getUserFinances = async (userID, providerID) => {
     }
     let userFinances;
     userFinances = await getProviderImageAndName(ID);
-    console.log("userFinances", userFinances)
     const options = {
       method: "POST",
       uri: "http://10.58.52.186:3001/mydata/account/",
@@ -58,7 +56,6 @@ const getUserFinances = async (userID, providerID) => {
 
     const req = await request(options);
     const response = decrypt(req.data);
-    console.log(response)
     userFinances.map((providerInfo) => {
       providerInfo.items = [];
       response.map((financeInfo) => {
@@ -70,11 +67,9 @@ const getUserFinances = async (userID, providerID) => {
     });
 
     console.dir(userFinances, { depth: null });
-    console.log(userFinances);
     return userFinances;
-  } catch(error){
-    console.log(error)
-    const eroor = new Error("SERVICES_KEY_ERROR");
+  } catch{
+    const error = new Error("SERVICES_KEY_ERROR");
     error.stausCode = 400;
     throw error;
   }

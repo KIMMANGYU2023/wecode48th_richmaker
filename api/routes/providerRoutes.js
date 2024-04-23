@@ -4,15 +4,7 @@ const { providerControllers } = require("../controllers");
 const { loginRequired } = require("../utils/auth");
 
 providerRoutes.get("", loginRequired, providerControllers.selectProviders);
-providerRoutes.get(
-  "/finances?",
-  loginRequired,
-  providerControllers.getUserFinances
-);
-providerRoutes.post(
-  "/transactions",
-  loginRequired,
-  providerControllers.postTransactions
-);
+providerRoutes.get("/finances?", loginRequired, providerControllers.getUserFinances);
+providerRoutes.post("/transactions", loginRequired, providerControllers.postTransactions);
 
 module.exports = providerRoutes;

@@ -1,16 +1,17 @@
-const { SimpleConsoleLogger } = require("typeorm");
 const { AppDataSource } = require("./dataSource");
 
-const getMemberCount = async (groupId) => {
+const getMemberCount = async(groupId) => {
   try {
-    const [{ memberCount }] = await AppDataSource.query(
-      `select member_count as memberCount
-            from groupings
-            where id = ?`,
+    const memberCount = await AppDataSource.query(
+      `
+      SELECT member_count
+      FROM groupings
+      WHERE id = ?
+      `,
       [groupId]
     );
     return memberCount;
-  } catch {
+  } catch{
     const error = new Error("datasource error");
     error.statusCode = 400;
     throw error;
@@ -19,37 +20,47 @@ const getMemberCount = async (groupId) => {
 
 const sendInvitation = async (userId, receiverId, status = 1) => {
   try {
-    let groupId = null;
-    if (userId === null && receiverId === null) {
-      groupId = await createGroup();
-    }
+    let groupId = (userId === null && receiverId === null) ? await createGroup() : null;
 
     const { insertId } = await AppDataSource.query(
-      `INSERT INTO invitations(inviter_id, receiver_id, status) VALUES (?, ?, ?);`,
+      `
+      INSERT INTO invitations
+      (inviter_id, receiver_id, status)
+      VALUES (?, ?, ?);
+      `,
       [userId, receiverId, status]
     );
-    if (groupId !== null) {
+
+    if (groupId) {
       await AppDataSource.query(
-        `UPDATE users SET grouping_id = ? WHERE id = ? OR id = ?`,
+        `
+        UPDATE users 
+        SET grouping_id = ? 
+        WHERE id = ? OR id = ?
+        `,
         [groupId, userId, receiverId]
       );
     }
+
     return insertId;
-  } catch{
+  } catch {
     const error = new Error("datasource error");
     error.statusCode = 400;
     throw error;
   }
 };
 
+
 const getGroupById = async (userId) => {
   try {
-    const [{ groupId}] = await AppDataSource.query(
-      `select 
-      grouping_id as groupId,
-      profile_image
-        from users
-        where id = ?`,
+    const [{ groupId }] = await AppDataSource.query(
+      `
+      SELECT
+        grouping_id as groupId,
+        profile_image
+        FROM users
+      WHERE id = ?
+        `,
       [userId]
     );
     return groupId;
@@ -65,7 +76,11 @@ const addMember = async (userId, receiverId, groupId) => {
     if (userId === null && receiverId === null) {
 
       await AppDataSource.query(
-        `UPDATE groupings SET id = id + 1 WHERE id = ?`,
+        `
+        UPDATE groupings 
+        SET id = id + 1 
+        WHERE id = ?
+        `,
         [groupId]
       );
       return; 
@@ -73,25 +88,33 @@ const addMember = async (userId, receiverId, groupId) => {
 
     if (groupId) {
       await AppDataSource.query(
-        `update users
-            set grouping_id = ?
-            where id=?`,
+        `
+        UPDATE users
+        SET grouping_id = ?
+        WHERE id=?
+        `,
         [groupId, receiverId]
       );
       await AppDataSource.query(
-        `update groupings
-            set member_count = member_count + 1
-            where id = ?`,
+        `
+        UPDATE groupings
+        SET member_count = member_count + 1
+        WHERE id = ?
+        `,
         [groupId]
       );
     } else {
       const { insertId } = await AppDataSource.query(
-        `insert into groupings (member_count) value (2)`
+        `
+        INSERT INTO groupings (member_count) VALUE (2)
+        `
       );
       await AppDataSource.query(
-        `update users
-            set grouping_id = ?
-            where id=? or id = ?`,
+        `
+        UPDATE users
+        SET grouping_id = ?
+        WHERE id=? or id = ?
+        `,
         [insertId, userId, receiverId]
       );
     }
@@ -105,24 +128,27 @@ const addMember = async (userId, receiverId, groupId) => {
 const withdrawFromGroup = async (userId, groupId) => {
   try {
     await AppDataSource.query(
-      `update user_finances
-      set is_shared = 0
-      where user_id = ?;
+      `
+      UPDATE user_finances
+      SET is_shared = 0
+      WHERE user_id = ?;
       `,
       [userId]
     );
     await AppDataSource.query(
       `
-      update users
-      set grouping_id = 0
-      where id = ?;`,
+      UPDATE users
+      SEt grouping_id = 0
+      WHERE id = ?;
+      `,
       [userId]
     );
     await AppDataSource.query(
       `
-      update groupings
-      set member_count = member_count -1
-      where id = ?;`,
+      UPDATE groupings
+      SET member_count = member_count -1
+      WHERE id = ?;
+      `,
       [groupId]
     );
   } catch {
@@ -135,21 +161,25 @@ const withdrawFromGroup = async (userId, groupId) => {
 const withdrawThenRemoveGroup = async (groupId) => {
   try {
     await AppDataSource.query(
-      `update user_finances
-      set is_shared = 0
-      where user_id IN (select id from users where grouping_id = ?);`,
+      `
+      UPDATE user_finances
+      SET is_shared = 0
+      SHERE user_id IN (SELECT id from users WHERE grouping_id = ?);
+      `,
       [groupId]
     );
     await AppDataSource.query(
       `
-    update users
-    set grouping_id = 0
-    where grouping_id = ?;`,
+      UPDATe users
+      SEt grouping_id = 0
+      WHERE grouping_id = ?;
+      `,
       [groupId]
     );
     await AppDataSource.query(
       `
-    delete from groupings where id = ?;`,
+      DELETE FROM groupings where id = ?;
+      `,
       [groupId]
     );
   } catch {
@@ -166,7 +196,8 @@ const getFinanceDetail = async (financeId, filteringQuery = "") => {
     const endDate = new Date().toISOString().split('T')[0];
     
     const details = await AppDataSource.query(
-      `SELECT
+      `
+      SELECT
         p.image_url as providerImage,
         p.provider_name as provider,
         uf.finance_number as financeNumber,
@@ -181,15 +212,19 @@ const getFinanceDetail = async (financeId, filteringQuery = "") => {
       JOIN user_finances uf ON t.user_finances_id = uf.id
       JOIN providers p ON uf.provider_id = p.id
       WHERE uf.id = ? AND t.created_at BETWEEN ? AND ? ${filteringQuery}
-      ORDER BY t.created_at DESC;`,
+      ORDER BY t.created_at DESC;
+      `,
       [financeId, startDate, endDate]
     );
 
     const [total] = await AppDataSource.query(
-      `SELECT SUM(t.amount) as totalAmount
+      `
+      SELECT 
+      SUM(t.amount) as totalAmount
       FROM transactions t
       JOIN user_finances uf ON t.user_finances_id = uf.id
-      WHERE uf.id = ? AND t.created_at BETWEEN ? AND ?;`,
+      WHERE uf.id = ? AND t.created_at BETWEEN ? AND ?;
+      `,
       [financeId, startDate, endDate]
     );
 
@@ -216,9 +251,7 @@ const getFinanceDetail = async (financeId, filteringQuery = "") => {
       transactions,
       ...total
     };
-
     return result;
-
   } catch{
     const error = new Error("dataSource Error");
     error.statusCode = 400;
@@ -230,11 +263,17 @@ const getFinanceDetail = async (financeId, filteringQuery = "") => {
 const getMemberList = async (groupId) => {
   try {
     return await AppDataSource.query(
-      `select u.id as userId, u.user_name as userName, u.profile_image as profileImage, SUM(case when uf.is_shared then 1 else 0 end) as sharedFinanceCount
-        from users u
-        LEFT join user_finances uf ON u.id = uf.user_id
-        where u.grouping_id = ?
-        GROUP BY u.id`,
+      `
+      SELECT 
+      u.id as userId, 
+      u.user_name as userName, 
+      u.profile_image as profileImage, 
+      SUM(case when uf.is_shared then 1 else 0 end) as sharedFinanceCount
+      FROM users u
+      LEFT join user_finances uf ON u.id = uf.user_id
+      WHERE u.grouping_id = ?
+      GROUP BY u.id
+      `,
       [groupId]
     );
   } catch {
@@ -252,7 +291,7 @@ const getGroupFinanceManagement = async (
 ) => {
   try {
     return await AppDataSource.query(
-      `
+    `
     SELECT
     t.is_monthly,JSON_OBJECT(
     "tDate",date(t.created_at),
@@ -270,10 +309,9 @@ const getGroupFinanceManagement = async (
     JOIN users u ON u.id = uf.user_id
     JOIN categories c on c.id = t.category_id
     WHERE u.grouping_id = ? AND uf.is_shared = 1 ${amount}${filterByMember}${filterByMonth}
-    ORDER BY t.created_at DESC
-    ;
-`,
-      [groupId]
+    ORDER BY t.created_at DESC;
+    `,
+    [groupId]
     );
   } catch {
     const error = new Error("dataSource Error");
@@ -285,7 +323,8 @@ const getGroupFinanceManagement = async (
 const getGroupMain = async (groupId) => {
   try {
     const [data] = await AppDataSource.query(
-      `WITH Finances AS (
+      `
+      WITH Finances AS (
         SELECT
             p.type AS t,
             JSON_OBJECT(
@@ -334,7 +373,8 @@ const getGroupMain = async (groupId) => {
       (select totals from Incomes) as totalIncomes,
       (select totals from Expenses) as totalExpenses,
       (SELECT JSON_ARRAYAGG(finances) FROM Finances WHERE t = "b") AS banks,
-      (SELECT JSON_ARRAYAGG(finances) FROM Finances WHERE t = "c") AS cards;`,
+      (SELECT JSON_ARRAYAGG(finances) FROM Finances WHERE t = "c") AS cards;
+      `,
       [groupId, groupId, groupId, groupId]
     );
     return data;
@@ -344,16 +384,19 @@ const getGroupMain = async (groupId) => {
     throw error;
   }
 };
+
 const getMembers = async (groupId) => {
   try {
     const [data] = await AppDataSource.query(
-      `select
-    JSON_ARRAYAGG(JSON_OBJECT(
+      `
+      SELECT
+      JSON_ARRAYAGG(JSON_OBJECT(
       "userId", u.id,
       "userName",u.user_name
-    )) as members
-  from users u
-  where grouping_id = ?;`,
+      )) as members
+      from users u
+      where grouping_id = ?;
+      `,
       [groupId]
     );
     return data;
@@ -366,7 +409,8 @@ const getMembers = async (groupId) => {
 const changeSharingStatus = async (userId, query) => {
   try {
     const { changedRows } = await AppDataSource.query(
-      `UPDATE user_finances
+      `
+      UPDATE user_finances
       SET is_shared = ${query}
       where user_id = ?;
       `,
@@ -379,10 +423,12 @@ const changeSharingStatus = async (userId, query) => {
     throw error;
   }
 };
+
 const getFinanceList = async (userId) => {
   try {
     const [data] = await AppDataSource.query(
-      `WITH Finances AS (
+      `
+      WITH Finances AS (
         SELECT
             p.type AS t,
             JSON_OBJECT(
@@ -401,7 +447,8 @@ const getFinanceList = async (userId) => {
     )
     SELECT
       (select JSON_ARRAYAGG(finances) from Finances where t = "b") as banks,
-      (select JSON_ARRAYAGG(finances) from Finances where t = "c") as cards;`,
+      (select JSON_ARRAYAGG(finances) from Finances where t = "c") as cards;
+      `,
       [userId]
     );
     return data;
@@ -420,7 +467,8 @@ const getSharedFinances = async (
 ) => {
   try {
     const data = await AppDataSource.query(
-      `SELECT
+      `
+      SELECT
         providerName, providerImage,
         ROUND(sum(sm), 0) as total,
         JSON_ARRAYAGG(info) AS finances
@@ -443,15 +491,16 @@ const getSharedFinances = async (
         WHERE u.grouping_id = ? AND uf.is_shared = 1 ${filterByType} ${filterByMember} ${filterByMonth}
         GROUP BY uf.provider_id, u.id, p.provider_name, uf.finance_number, uf.id
     ) AS subquery
-    GROUP BY providerName,providerImage;`,
+    GROUP BY providerName,providerImage;
+    `,
       [groupId]
     );
     return { info: data };
   } catch{
-    const error = new Error("dataSource Error 1");
+    const error = new Error("dataSource Error");
     error.statusCode = 400;
     throw error;
-  }ㅋㅋㅋ
+  }
 };
 
 const getCardFinanceDetail = async (financeId, yearValue, monthValue) => {
@@ -461,32 +510,36 @@ const getCardFinanceDetail = async (financeId, yearValue, monthValue) => {
 
   try {
       const details = await AppDataSource.query(
-`SELECT
-  p.image_url as providerImage,
-  p.provider_name as provider,
-  uf.finance_number as financeNumber,
-  c.image_url as categoryImage,
-  day(t.created_at) as tDay,
-  month(t.created_at) as tMonth,
-  year(t.created_at) as tYear,
-  t.transaction_note as note,
-  t.amount
-FROM transactions t
-JOIN categories c ON t.category_id = c.id
-JOIN user_finances uf ON t.user_finances_id = uf.id
-JOIN providers p ON uf.provider_id = p.id
-WHERE uf.id = ? AND t.created_at BETWEEN ? AND ?
-ORDER BY t.created_at DESC;`,
-      [financeId, startDate, endDate]
-      );
+    `
+    SELECT
+      p.image_url as providerImage,
+      p.provider_name as provider,
+      uf.finance_number as financeNumber,
+      c.image_url as categoryImage,
+      day(t.created_at) as tDay,
+      month(t.created_at) as tMonth,
+      year(t.created_at) as tYear,
+      t.transaction_note as note,
+      t.amount
+    FROM transactions t
+    JOIN categories c ON t.category_id = c.id
+    JOIN user_finances uf ON t.user_finances_id = uf.id
+    JOIN providers p ON uf.provider_id = p.id
+    WHERE uf.id = ? AND t.created_at BETWEEN ? AND ?
+    ORDER BY t.created_at DESC;
+    `,
+    [financeId, startDate, endDate]
+    );
 
-      const [total] = await AppDataSource.query(
-`SELECT SUM(t.amount) as totalAmount
-FROM transactions t
-JOIN user_finances uf ON t.user_finances_id = uf.id
-WHERE uf.id = ? AND t.created_at BETWEEN ? AND ?;`,
-      [financeId, startDate, endDate]
-      );
+    const [total] = await AppDataSource.query(
+    `
+    SELECT SUM(t.amount) as totalAmount
+    FROM transactions t
+    JOIN user_finances uf ON t.user_finances_id = uf.id
+    WHERE uf.id = ? AND t.created_at BETWEEN ? AND ?;
+    `,
+    [financeId, startDate, endDate]
+    );
 
       if (!details.length) {
           throw new Error("No details found");
@@ -512,11 +565,11 @@ WHERE uf.id = ? AND t.created_at BETWEEN ? AND ?;`,
           transactions,
           ...total
       };
-      console.log(result);
       return result;
-
-  } catch{
-      throw new Error("Database Error");
+  }catch{
+    const error = new Error("dataSource Error");
+    error.statusCode = 400;
+    throw error;
   }
 };
 

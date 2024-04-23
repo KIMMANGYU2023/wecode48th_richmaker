@@ -7,33 +7,30 @@ const sendInvitation = async (userId, receiverPhoneNumber) => {
     validatePhoneNumber(receiverPhoneNumber);
 
     const groupId = await groupDao.getGroupById(userId);
-    console.log(groupId)
-    if (groupId) {
-      const memberCount = await groupDao.getMemberCount(groupId);
-      if (memberCount >= 5) {
-        const error = new Error("Exceeds maximum member count: 5");
-        error.statusCode = 400;
-        throw error;
-      }
+
+    const memberCount = await groupDao.getMemberCount(groupId);
+
+    if (memberCount >= 5) {
+      throw new Error("Exceeds maximum member count: 5");
+    }
+    const receiverData = await getUserByPhoneNumber(receiverPhoneNumber);
+    const receiverId = receiverData ? receiverData.id : null;
+    
+    if (typeof receiverData === "undefined") {
+    
+    const error = new Error("Phone number not found");
+    error.statusCode = 203;
+    throw error;
     }
 
-      const receiverData = await getUserByPhoneNumber(receiverPhoneNumber);
-      const receiverId = receiverData ? receiverData.id : null;
-      console.log(receiverId);
+    const result = await groupDao.sendInvitation(userId, receiverId);
+    await groupDao.addMember(userId, receiverId, groupId);
+    return result;
+  }catch(error){
+    throw error;
+  }
+};
 
-      if (typeof receiverData === "undefined") {
-        const error = new Error("Phone number not found");
-        error.statusCode = 203;
-        throw error;
-      }
-      const result = await groupDao.sendInvitation(userId, receiverId);
-      const group = await groupDao.addMember(userId, receiverId, groupId);
-
-      return { result, group };
-    } catch (error) {
-      throw error;
-    }
-  };
 
 const getMemberList = async (userId) => {
   const groupId = await groupDao.getGroupById(userId);
@@ -151,7 +148,6 @@ const withdrawFromGroup = async (userId) => {
   return await groupDao.withdrawThenRemoveGroup(groupId);
 };
 
-
 const getcardMemberList = async (userId) => {
   const groupId = await groupDao.getGroupById(userId);
   if (!groupId) {
@@ -166,6 +162,7 @@ const getcardMemberList = async (userId) => {
 
   return await groupDao.getCardFinanceDetail(financeId, yearValue, monthValue);
 };
+
 module.exports = {
   sendInvitation,
   getMemberList,

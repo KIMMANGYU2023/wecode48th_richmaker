@@ -11,25 +11,21 @@ const mainInfo = catchAsync(async (req, res) => {
     throw error;
   }
 
-  try {
-    const depositsResult = await mainService.depositsAmount(user.id, month);
-    const expensesResult = await mainService.expensesAmount(user.id, month);
-    const monthlyExpensesResult = await mainService.monthlyExpenseAmounts(
-      user.id,
-      month
-    );
-    const expectedExpenseResult = await mainService.expectedExpenseAmounts(
-      user.id,
-      month
-    );
-    const variableExpenseResult = await mainService.variableExpenseAmounts(
-      user.id,
-      month
-    );
-    const amountsBycategoriesResult = await mainService.amountsBycategories(
-      user.id,
-      month
-    );
+  const [
+    depositsResult,
+    expensesResult,
+    monthlyExpensesResult,
+    expectedExpenseResult,
+    variableExpenseResult,
+    amountsBycategoriesResult
+  ] = await Promise.all([
+    mainService.depositsAmount(user.id, month),
+    mainService.expensesAmount(user.id, month),
+    mainService.monthlyExpenseAmounts(user.id, month),
+    mainService.expectedExpenseAmounts(user.id, month),
+    mainService.variableExpenseAmounts(user.id, month),
+    mainService.amountsBycategories(user.id, month)
+  ]);
 
     res.status(200).json({
       data: {
@@ -44,11 +40,6 @@ const mainInfo = catchAsync(async (req, res) => {
         amountsBycategories: amountsBycategoriesResult,
       },
     });
-  } catch {
-    const error = new Error("dataSource Error #mainInfo");
-    error.statusCode = 400;
-    throw error;
-  }
 });
 
 module.exports = { mainInfo };
