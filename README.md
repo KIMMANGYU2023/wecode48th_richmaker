@@ -2,7 +2,7 @@
 공동 계좌의 관리 플랫폼
 
 ## 프로젝트 회고
-- https://kimmangyu.tistory.com/entry/wecode-3%EC%B0%A8-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%9A%8C%EA%B3%A0%EB%A1%9D
+- <div>티스토리<a>https://kimmangyu.tistory.com/entry/wecode-3%EC%B0%A8-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%9A%8C%EA%B3%A0%EB%A1%9D</a></div>
 
 ## ▶️시연 영상
 
