@@ -1,6 +1,9 @@
 # 프로젝트 소개
 공동 계좌의 관리 플랫폼
 
+## 프로젝트 회고
+- <a href="https://kimmangyu.tistory.com/entry/wecode-3%EC%B0%A8-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%9A%8C%EA%B3%A0%EB%A1%9D">티스토리 회고</a>
+
 ## ▶️시연 영상
 
 [![richaker 영상 썸네일]()](https://tv.kakao.com/v/441262435)
